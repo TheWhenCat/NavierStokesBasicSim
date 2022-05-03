@@ -34,15 +34,23 @@ def state_vector(P, T, M, Rbar=287, c=347.2, gamma=1.4):
     Q = np.array([q_one, q_two, q_three, q_four])
     return Q
 
+def density():
+    pass
 
 def slip_operator(index, Setax, Setay):
     Uzero = np.array([[Setay, -1*Setax], [Setax, Setay]])
     Uone = np.array([[Setay, -1*Setax], [-1*Setax, -1*Setay]])
-    O = np.invert(Uone)*Uzero
-    vecUzero = O*np.array([[state[index]], []])
+    Uione = np.linalg.inv(Uone)
+    Op = np.dot(Uione, Uzero)
+    print(Op)
+    #To-Do : Seems wrong come back to it
+    vzero = np.array([state[index[0], index[1], 1], state[index[0], index[1], 2]])
+    vecUzero = np.dot(Op, vzero)
+    
+    return vecUzero
 
 
-def nonslip_operator():
+def nonslip_operator(x, y, z):
     pass
 
 
@@ -54,23 +62,29 @@ def non_adiabatic():
     pass
 
 
-def wall_operator(wall, energy, index, od, ob, ot):
-    wall_cond = {"slip": nonslip_operator, "nonslip": slip_operator}
+def wall_operator(wall, energy, index):
+    wall_cond = {"nonslip": nonslip_operator, "slip": slip_operator}
     energy = {"adiabatic": adiabatic, "nonadiabatic": non_adiabatic}
 
     # Instead of assuming geometry we take in centers with these conditions
     # Allow us to reuse this operator for any geometry
     # Backing out cell values at points
-    
-    yeta = totalh[od, 2] - totalh[ol, 2]
-    xeta = totalh[od, 1] - totalh[ol, 1]
-    yxi = totalh[od, 2] - totalh[ot, 2]
-    xxi = totalh[od, 1] - totalh[ot, 1]
+    tl = [index[0] - 1, index[1] - 1]
+    bl = [index[0] + 1, index[1] - 1]
+    tr = [index[0] - 1, index[1] + 1]
+    br = [index[0] + 1, index[1] + 1]
+    yeta = totalh[br[0], br[1],1] - totalh[bl[0], bl[1], 1]
+    xeta = totalh[br[0], br[1], 0] - totalh[bl[0], bl[1], 0]
+    yxi = totalh[bl[0], bl[1], 1] - totalh[tr[0], tr[1], 1]
+    xxi = totalh[br[0], br[1], 0] - totalh[tr[0], tr[1], 0]
     
     Setax = -1*yxi
     Setay = xxi
 
-    momentum_operator = wall_cond[wall](index, Setax, Setay)
+    halo_momentum = wall_cond[wall](index, Setax, Setay)
+    
+    return halo_momentum
+    
 
 
 # Initializing State Vector
@@ -78,7 +92,17 @@ Qi = state_vector(101325, 300, 2.000)  # Pa, K, Mach Numeber
 size = np.shape(totalh)
 state = np.zeros([size[0], size[1], len(Qi)])
 state[3:-3:2, 1:-1:2] = Qi
-for j in range(len(state[1::2, 1])):
+
+
+for j in range(len(state[3, 1::2])):
     # Iterate over rows fixing the first column
-    print(state[2*j+1, 1])
-    state[:, 0][j] = wall_operator("slip", "adiabatic", [2*j + 1, 1])
+    index = [3, 2*j+1]
+    momentum = wall_operator("slip", "adiabatic", index)
+    state[1, 2*j + 1, 1] = momentum[0]
+    state[1, 2*j + 1, 2] = momentum[1]
+    
+    index = [-4, 2*j + 1]
+    momentum = wall_operator("slip", "adiabtic", index)
+    state[-2, 2*j + 1, 1] = momentum[0]
+    state[-2, 2*j + 1, 2] = momentum[1]
+    
