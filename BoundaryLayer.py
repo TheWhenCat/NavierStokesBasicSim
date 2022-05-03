@@ -34,16 +34,16 @@ def state_vector(P, T, M, Rbar=287, c=347.2, gamma=1.4):
     Q = np.array([q_one, q_two, q_three, q_four])
     return Q
 
-def density():
-    pass
+def density(index):
+    #Assume normal pressure gradient at wall is 0, implying gradient = 0
+    return state[index[0], index[1], 0]
 
 def slip_operator(index, Setax, Setay):
     Uzero = np.array([[Setay, -1*Setax], [Setax, Setay]])
     Uone = np.array([[Setay, -1*Setax], [-1*Setax, -1*Setay]])
-    Uione = np.linalg.inv(Uone)
-    Op = np.dot(Uione, Uzero)
-    print(Op)
-    #To-Do : Seems wrong come back to it
+    Uizero = np.linalg.inv(Uzero)
+    Op = np.dot(Uizero, Uone)
+    # 0 is outside, 1 is inside
     vzero = np.array([state[index[0], index[1], 1], state[index[0], index[1], 2]])
     vecUzero = np.dot(Op, vzero)
     
@@ -69,11 +69,11 @@ def wall_operator(wall, energy, index):
     # Instead of assuming geometry we take in centers with these conditions
     # Allow us to reuse this operator for any geometry
     # Backing out cell values at points
-    tl = [index[0] - 1, index[1] - 1]
-    bl = [index[0] + 1, index[1] - 1]
-    tr = [index[0] - 1, index[1] + 1]
-    br = [index[0] + 1, index[1] + 1]
-    yeta = totalh[br[0], br[1],1] - totalh[bl[0], bl[1], 1]
+    tl = [index[0] + 1, index[1] - 1]
+    bl = [index[0] - 1, index[1] - 1]
+    tr = [index[0] + 1, index[1] + 1]
+    br = [index[0] - 1, index[1] + 1]
+    yeta = totalh[br[0], br[1],1] - totalh[bl[0], bl[1], 1] 
     xeta = totalh[br[0], br[1], 0] - totalh[bl[0], bl[1], 0]
     yxi = totalh[bl[0], bl[1], 1] - totalh[tr[0], tr[1], 1]
     xxi = totalh[br[0], br[1], 0] - totalh[tr[0], tr[1], 0]
@@ -97,12 +97,17 @@ state[3:-3:2, 1:-1:2] = Qi
 for j in range(len(state[3, 1::2])):
     # Iterate over rows fixing the first column
     index = [3, 2*j+1]
+    rho = density(index)
     momentum = wall_operator("slip", "adiabatic", index)
+    state[1, 2*j+1, 0] = rho
     state[1, 2*j + 1, 1] = momentum[0]
     state[1, 2*j + 1, 2] = momentum[1]
     
     index = [-4, 2*j + 1]
+    rho = density(index)
     momentum = wall_operator("slip", "adiabtic", index)
+    state[-2, 2*j+1, 0] = rho
     state[-2, 2*j + 1, 1] = momentum[0]
     state[-2, 2*j + 1, 2] = momentum[1]
+    
     
