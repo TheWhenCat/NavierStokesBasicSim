@@ -35,10 +35,11 @@ def state_vector(P, T, M, Rbar=287, c=347.2, gamma=1.4):
     return Q
 
 
-def slip_operator():
-    pass
-    # Uzero =
-    # Uone =
+def slip_operator(index, Setax, Setay):
+    Uzero = np.array([[Setay, -1*Setax], [Setax, Setay]])
+    Uone = np.array([[Setay, -1*Setax], [-1*Setax, -1*Setay]])
+    O = np.invert(Uone)*Uzero
+    vecUzero = O*np.array([[state[index]], []])
 
 
 def nonslip_operator():
@@ -53,32 +54,30 @@ def non_adiabatic():
     pass
 
 
-def wall_operator(wall, energy, index, orientation="None"):
+def wall_operator(wall, energy, index, od, ob, ot):
     wall_cond = {"slip": nonslip_operator, "nonslip": slip_operator}
     energy = {"adiabatic": adiabatic, "nonadiabatic": non_adiabatic}
-    directions = {"top": [[index[0] - 1, index[1]+1], [index[0]+1, index[1]+1]], 
-                  "bottom": [[index[0] - 1, index[1]-1], [index[0]+1, index[1]-1]],
-                  "left": [[index[0]-1, index[1]-1], [index[0]-1, index[1]+1]], 
-                  "right": [[index[0]+1, index[1] - 1], [index[0]+1, index[1]+1]]
-                  }
+
     # Instead of assuming geometry we take in centers with these conditions
     # Allow us to reuse this operator for any geometry
     # Backing out cell values at points
-    ij = []
-    tr = 
-    yeta = 
-    xeta = 0
-    yxi = 0
-    xxi = 0
+    
+    yeta = totalh[od, 2] - totalh[ol, 2]
+    xeta = totalh[od, 1] - totalh[ol, 1]
+    yxi = totalh[od, 2] - totalh[ot, 2]
+    xxi = totalh[od, 1] - totalh[ot, 1]
+    
+    Setax = -1*yxi
+    Setay = xxi
 
-    momentum_operator = wall_cond[wall]
+    momentum_operator = wall_cond[wall](index, Setax, Setay)
 
 
 # Initializing State Vector
 Qi = state_vector(101325, 300, 2.000)  # Pa, K, Mach Numeber
 size = np.shape(totalh)
 state = np.zeros([size[0], size[1], len(Qi)])
-state[1::2, 1::2] = Qi
+state[3:-3:2, 1:-1:2] = Qi
 for j in range(len(state[1::2, 1])):
     # Iterate over rows fixing the first column
     print(state[2*j+1, 1])
