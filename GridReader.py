@@ -74,7 +74,12 @@ def reader(file):
 def metrics(grid):
     #Define an array to store values with its associated coordinate
     total = np.zeros([len(grid)*2- 1, len(grid[0])*2 -1, 3])
-    
+    #Inserting coordinates at even, even pairs
+    size = np.shape(total)
+    for i in range(0:size[0]:2):
+        for j in range(0:size[1]:2):
+            total[i, j, 1:2] = grid[i/2, j/2]
+            
     #Volume Calculation
     for i in range(len(grid) - 1):
         l = len(grid[i])
