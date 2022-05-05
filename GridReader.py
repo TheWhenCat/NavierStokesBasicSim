@@ -98,6 +98,7 @@ def metrics(grid):
             fc = []
             f = []
             fc = [0.5*(grid[i+1][j][0] + grid[i][j][0]),  0.5*(grid[i][j][1] + grid[i+1][j][1])]
+            # xeta
             f = np.sqrt((grid[i+1][j][0] - grid[i][j][0])**2 + (grid[i+1][j][1] - grid[i][j][1])**2)
             fc.append(f)
             

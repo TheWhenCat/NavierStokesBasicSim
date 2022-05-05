@@ -44,21 +44,34 @@ def iterator(state, totalh, max_iterations):
     
     state = np.random.rand(size[0], size[1], 4)
     inp = state
-    
+    A_average = np.zeros([size[0], size[1], 4])
+    E = np.zeros([size[0], size[1], 4])
+    F = np.zeros([size[0], size[1], 4])
     for i in range(3,size[0] - 3, 2):
         for j in range(3, size[1] - 3, 2):
-            # print(state[i, j])
-            # print(i, j)
+            
             QB, QT = state_interpolation([i+1, j], 0, 1, "eta", state)
-            var[i+1, j, 0] =  QB
+            var[i-1, j, 0] =  QB
             var[i+1, j, 1] = QT
                        
             QL, QR = state_interpolation([i, j+1], 0, 1, "xi", state)
-            var[i, j+1, 0] = QL
+            var[i, j-1, 0] = QL
             var[i, j+1, 1] = QR
-            
-            
         
+            curv_eta = np.array(totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
+            curv_xi = np.array(totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
+            Seta = np.sqrt(curv_eta.dot(curv_eta))
+            Sxi = np.sqrt(curv_xi.dot(curv_xi))
+            
+            A_average[i+1, j] = Roe_Jacobian(curv_eta, QB, QT, state)
+            A_average[i, j+1] = Roe_Jacobian(curv_xi, QL, QR, state)
+            
+            E[i+1, j] = Convective_Operator(curv_xi, state[i+1, j])
+            F[i, j+1] = Convective_Operator(curv_eta, state[i, j+1])
+            
+            
+            
+            
     i=0
     Qprev = state
     # while i<max_iterations:
