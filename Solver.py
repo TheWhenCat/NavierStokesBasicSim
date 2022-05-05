@@ -27,7 +27,8 @@ def Roe_Jacobian(curv, stateL, stateR, gamma = 1.4):
     u = (np.sqrt(rhoR) * uR + np.sqrt(rhoL) * uL) *1/(np.sqrt(rhoR) + np.sqrt(rhoL))
     v = (np.sqrt(rhoR) * vR + np.sqrt(rhoL) * vL) *1/(np.sqrt(rhoR) + np.sqrt(rhoL))
     h = (np.sqrt(rhoR) * hR + np.sqrt(rhoL) * hL) * 1/(np.sqrt(rhoR) + np.sqrt(rhoL))
-    c = np.sqrt((gamma - 1)*(h - 0.5*(u**2 + v**2)))
+    #Adding in negative for now
+    c = np.sqrt(-1*(gamma - 1)*(h - 0.5*(u**2 + v**2)))
     
     vn = u*etax + v*etay
     
@@ -35,7 +36,7 @@ def Roe_Jacobian(curv, stateL, stateR, gamma = 1.4):
                    [u - c*etax, u, u + c*etax, etay],
                    [v - c*etay, v, v + c*etay, -1*etax],
                    [h - c*vn, 0.5*(u**2 + v**2), h + c*vn, u*etay - v*etax]])
-    
+    print(Rv)
     eigval = [abs(vn - c), abs(vn), abs(vn + c), abs(vn)]
     Diag = np.zeros([len(eigval), len(eigval)])
     for i in range(len(eigval)):
@@ -50,6 +51,7 @@ def Roe_Jacobian(curv, stateL, stateR, gamma = 1.4):
                    [(v - vn*etay)/etax, etay, -etax, 0]])
     R = np.matmul(Diag, Rv)
     out = np.matmul(Lv, R)
+    print(out)
     return out
     
 def Convective_Operator(curv, state, gamma=1.4):

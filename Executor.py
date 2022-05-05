@@ -4,18 +4,12 @@ Created on Tue May  3 20:17:30 2022
 
 @author: Dhruva
 """
+import logging, sys
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+
 import numpy as np
-from BoundaryLayer import read_in, initial_values
 from Solver import state_interpolation, Roe_Jacobian, Convective_Operator
 
-M = 2 # Mach Number Axial
-c = 347.2 # Sound Speed (m/s)
-P = 101325 # Pressure (Pa)
-T = 300 # Kelvin
-
-file = "Coarse.dat"
-totalh = read_in(file)
-state = initial_values(P, T, M, totalh)
 
 def time_step(totalh, state, c=347.2):
     size = np.shape(totalh)
@@ -42,7 +36,7 @@ def iterator(state, totalh, max_iterations):
     size = np.shape(state)
     var = np.zeros([size[0], size[1], 2, 4])
     
-    state = np.random.rand(size[0], size[1], 4)
+    #state = np.random.rand(size[0], size[1], 4)
     inp = state
     A_average = np.zeros([size[0], size[1], 4])
     E = np.zeros([size[0], size[1], 4])
@@ -50,16 +44,18 @@ def iterator(state, totalh, max_iterations):
     for i in range(3,size[0] - 3, 2):
         for j in range(3, size[1] - 3, 2):
             
-            QB, QT = state_interpolation([i+1, j], 0, 1, "eta", state)
-            var[i-1, j, 0] =  QB
+            [QB,QT] = state_interpolation([i+1, j], 0, 1, "eta", state)
+            logging.debug(f'{QB}')
+            logging.debug(f'{QT}')
+            var[i-1, j, 0] = QB
             var[i+1, j, 1] = QT
                        
             QL, QR = state_interpolation([i, j+1], 0, 1, "xi", state)
             var[i, j-1, 0] = QL
             var[i, j+1, 1] = QR
         
-            curv_eta = np.array(totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
-            curv_xi = np.array(totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
+            curv_eta =totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2]
+            curv_xi = totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2]
             Seta = np.sqrt(curv_eta.dot(curv_eta))
             Sxi = np.sqrt(curv_xi.dot(curv_xi))
             
@@ -77,5 +73,3 @@ def iterator(state, totalh, max_iterations):
     
     return var, inp
 
-x, inp =iterator(state, totalh, 500)
-xvis = x[:, :, 1, :]
