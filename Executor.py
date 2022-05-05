@@ -55,8 +55,8 @@ def iterator(state, totalh, max_iterations):
             var[i, j+1, 1] = QR
             
             #normalize    
-            neta = (totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2]) / np.sqrt(totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
-            nxi = (totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2]) / np.sqrt(totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
+            neta = (totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2]) / np.sqrt(totalh[i-1, j-1, 0:2].dot(totalh[i-1, j+1, 0:2]))
+            nxi = (totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2]) / np.sqrt(totalh[i+1, j-1, 0:2].dot(totalh[i-1, j+1, 0:2]))
             
             A_average[i+1, j] = Roe_Jacobian(neta, QB, QT)
             A_average[i, j+1] = Roe_Jacobian(nxi, QL, QR)
