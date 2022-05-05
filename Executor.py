@@ -44,7 +44,7 @@ def iterator(state, totalh, max_iterations):
     for i in range(3,size[0] - 3, 2):
         for j in range(3, size[1] - 3, 2):
             
-            [QB,QT] = state_interpolation([i+1, j], 0, 1, "eta", state)
+            QB,QT = state_interpolation([i, j], 0, 1, "eta", state)
             logging.debug(f'{QB}')
             logging.debug(f'{QT}')
             var[i-1, j, 0] = QB
@@ -53,17 +53,16 @@ def iterator(state, totalh, max_iterations):
             QL, QR = state_interpolation([i, j+1], 0, 1, "xi", state)
             var[i, j-1, 0] = QL
             var[i, j+1, 1] = QR
-        
-            curv_eta =totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2]
-            curv_xi = totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2]
-            Seta = np.sqrt(curv_eta.dot(curv_eta))
-            Sxi = np.sqrt(curv_xi.dot(curv_xi))
             
-            A_average[i+1, j] = Roe_Jacobian(curv_eta, QB, QT)
-            A_average[i, j+1] = Roe_Jacobian(curv_xi, QL, QR)
+            #normalize    
+            neta = (totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2]) / np.sqrt(totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
+            nxi = (totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2]) / np.sqrt(totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
             
-            E[i+1, j] = Convective_Operator(curv_xi, state[i+1, j])
-            F[i, j+1] = Convective_Operator(curv_eta, state[i, j+1])
+            A_average[i+1, j] = Roe_Jacobian(neta, QB, QT)
+            A_average[i, j+1] = Roe_Jacobian(nxi, QL, QR)
+            
+            E[i+1, j] = Convective_Operator(nxi, state[i+1, j])
+            F[i, j+1] = Convective_Operator(neta, state[i, j+1])
             
             
     i=0

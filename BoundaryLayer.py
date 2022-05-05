@@ -49,7 +49,7 @@ def slip_operator(index, Setax, Setay, state):
     Uizero = np.linalg.inv(Uzero)
     Op = np.dot(Uizero, Uone)
     vzero = np.array([state[index[0], index[1], 1], state[index[0], index[1], 2]])
-    vecUzero = -1*np.dot(Op, vzero)
+    vecUzero = -np.dot(Op, vzero)
     
     return vecUzero
 
@@ -59,7 +59,10 @@ def nonslip_operator(x, y, z):
 
 
 def adiabatic(index, P, state, gamma=1.4):
-    total_energy = P/(gamma - 1) + 0.5*state[index[0], index[1], 0]*(state[index[0], index[1], 1]**2 + state[index[0], index[1], 2]**2)
+    q1 = state[index[0], index[1], 0]
+    q2 = state[index[0], index[1], 1]
+    q3 = state[index[0], index[1], 2]
+    total_energy = P/(gamma - 1) + 0.5*(q2**2 + q3**2)/q1
     return total_energy
 
 
@@ -83,7 +86,7 @@ def wall_operator(wall, energy, index, totalh, state):
     yxi = totalh[tr[0], tr[1], 1] - totalh[br[0], br[1], 1]
     xxi = totalh[tr[0], tr[1], 0] - totalh[br[0], br[1], 0]
     
-    Setax = -1*yxi
+    Setax = -yxi
     Setay = xxi
 
     halo_momentum = wall_cond[wall](index, Setax, Setay, state)
