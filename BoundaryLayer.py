@@ -99,6 +99,7 @@ def initial_values(P, T, M, totalh):
     state[3:-3:2, 1:-1:2] = Qi
     
     
+    
     for j in range(len(state[3, 1::2])):
         # Iterate over rows fixing the first column
         index = [3, 2*j+1]

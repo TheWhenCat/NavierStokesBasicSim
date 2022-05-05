@@ -100,6 +100,7 @@ def metrics(grid):
             fc = [0.5*(grid[i+1][j][0] + grid[i][j][0]),  0.5*(grid[i][j][1] + grid[i+1][j][1])]
             f = np.sqrt((grid[i+1][j][0] - grid[i][j][0])**2 + (grid[i+1][j][1] - grid[i][j][1])**2)
             fc.append(f)
+            
             #Vertical Fluxes in Eta direction
             #Stored in odd rows and even columns
             total[2*i + 1, 2*j ] = fc
