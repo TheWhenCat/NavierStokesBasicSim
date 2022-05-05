@@ -56,9 +56,24 @@ def Roe_Jacobian(eta, stateL, stateR, gamma = 1.4):
     out = np.matmul(Lv, Diag)
     return out
     
-def Convective_Operator(eta, state):
+def Convective_Operator(eta, state, gamma=1.4):
     
-    pass
+    etax = eta[0]
+    etay = eta[1]
+    
+    q1 = state[0]
+    q2 = state[1]
+    q3 = state[2]
+    q4 = state[3]
+    
+    e1 = q2*etax + q3*etay
+    e2 = (q2**2)/q1 *etax + q2*q3*etay/q1 + (gamma-1)*(q4 - 0.5*((q2**2)/q1 + (q3**2)/q1))*etax
+    e3 = q2*q3*etax/q1 + (q3**2)*etay/q1 + (gamma-1)*(q4 - 0.5*((q2**2)/q1 + (q3**2)/q1))*etay
+    e4 = gamma*q4 - 0.5*(gamma - 1)*((q2**2)/q1 + (q3**2)/q1)*(q2/q1*etax + q3/q1*etay)
+    
+    E = np.array([[e1], [e2], [e3], [e4]])
+    
+    return E
 
 def phi(mode):
     if mode == "const":
