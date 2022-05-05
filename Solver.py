@@ -37,8 +37,8 @@ def Roe_Jacobian(curv, stateL, stateR, gamma = 1.4):
                    [h - c*vn, 0.5*(u**2 + v**2), h + c*vn, u*etay - v*etax]])
     
     eigval = [abs(vn - c), abs(vn), abs(vn + c), abs(vn)]
-    Diag = np.zero([len(eigval), len(eigval)])
-    for i in len(range(eigval)):
+    Diag = np.zeros([len(eigval), len(eigval)])
+    for i in range(len(eigval)):
         Diag[i, i] = eigval[i]
         
     g = (gamma-1)

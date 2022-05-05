@@ -63,13 +63,11 @@ def iterator(state, totalh, max_iterations):
             Seta = np.sqrt(curv_eta.dot(curv_eta))
             Sxi = np.sqrt(curv_xi.dot(curv_xi))
             
-            A_average[i+1, j] = Roe_Jacobian(curv_eta, QB, QT, state)
-            A_average[i, j+1] = Roe_Jacobian(curv_xi, QL, QR, state)
+            A_average[i+1, j] = Roe_Jacobian(curv_eta, QB, QT)
+            A_average[i, j+1] = Roe_Jacobian(curv_xi, QL, QR)
             
             E[i+1, j] = Convective_Operator(curv_xi, state[i+1, j])
             F[i, j+1] = Convective_Operator(curv_eta, state[i, j+1])
-            
-            
             
             
     i=0
