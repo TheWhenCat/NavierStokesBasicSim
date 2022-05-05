@@ -6,12 +6,12 @@ Created on Tue May  3 20:28:07 2022
 """
 import numpy as np
 
-def Roe_Jacobian(eta, stateL, stateR, gamma = 1.4):
+def Roe_Jacobian(curv, stateL, stateR, gamma = 1.4):
     #Want to operate using a Roe Averages Scheme of the Values
     #hat{A}
     
-    etax = eta[0]
-    etay = eta[1]
+    etax = curv[0]
+    etay = curv[1]
     
     rhoL = stateL[0]
     uL = stateL[1]/rhoL
@@ -30,10 +30,6 @@ def Roe_Jacobian(eta, stateL, stateR, gamma = 1.4):
     c = np.sqrt((gamma - 1)*(h - 0.5*(u**2 + v**2)))
     
     vn = u*etax + v*etay
-    lambda1 = vn
-    lambda2 = vn - c
-    lambda3 = vn + c
-    lambda4 = lambda1
     
     Rv = np.array([[1, 1, 1, 0],
                    [u - c*etax, u, u + c*etax, etay],
@@ -52,14 +48,14 @@ def Roe_Jacobian(eta, stateL, stateR, gamma = 1.4):
                    [(ss - g*ek)/ss, g*u/ss, g*v/ss, -1*g/ss],
                    [(g*ek - c*vn)/(2*ss), (-1*g*u + c*etax)/(2*ss), (-1*g*v + c*etay)/(2*ss), (-1*g/(2*ss))],
                    [(v - vn*etay)/etax, etay, -etax, 0]])
-    R = np.matmul(Diag, Lv)
-    out = np.matmul(Lv, Diag)
+    R = np.matmul(Diag, Rv)
+    out = np.matmul(Lv, R)
     return out
     
-def Convective_Operator(eta, state, gamma=1.4):
+def Convective_Operator(curv, state, gamma=1.4):
     
-    etax = eta[0]
-    etay = eta[1]
+    etax = curv[0]
+    etay = curv[1]
     
     q1 = state[0]
     q2 = state[1]
@@ -90,16 +86,22 @@ def state_interpolation(index, epsilon, kappa, direction, state):
     i = index[0]
     j = index[1]
     Q = state[i, j]
-    if orient[direction] == 0:
+    if orient[direction] == 1:
         Qnegone = state[i - 1, j]
         Qnegtwo = state[i - 3, j]
         Qposone = state[i + 1, j]
+        
+    if orient[direction] == 0:
+        Qnegone = state[i, j - 1]
+        Qnegtwo = state[i, j - 3]
+        Qposone = state[i, j + 1]
         
     limiterL, rL = phi("const")
     QL = Qnegone + 0.25*epsilon*((1 - kappa)*(Qnegone - Qnegtwo) * limiterL + (1 + kappa)*(Q - Qnegone)*1/rL * limiterL)
     
     limiterR, rR = phi("const")
     QR = Q - 0.25*epsilon*((1 + kappa)*(Q - Qnegone)*limiterR*1/rR + (1 - kappa)*(Qposone - Q)*limiterR)
+    
     return QL, QR
     
 
