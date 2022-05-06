@@ -40,12 +40,14 @@ def iterator(state, totalh, max_iterations):
     inp = state
     
     A_average = np.zeros([size[0], size[1], 4, 4])
-    E = np.zeros([size[0], size[1], 4, 4])
-    F = np.zeros([size[0], size[1], 4, 4])
+    E = np.zeros([size[0], size[1], 4])
+    print(np.shape(E))
+    F = np.zeros([size[0], size[1], 4])
     m= 3
     xmax = size[0] - 3
     for i in range(m,xmax, 2):
         k = 3
+        c=0
         maximum = size[1] - 3
         for j in range(k, maximum, 2):
             if all(inp[i, j] == 0):
@@ -65,16 +67,21 @@ def iterator(state, totalh, max_iterations):
             neta = (totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
             neta = neta / np.sqrt(neta.dot(neta))
             nxi = (totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
+            print(nxi)
             nxi = nxi / np.sqrt(nxi.dot(nxi))
             try:
                 A_average[i+1, j] = Roe_Jacobian(neta, QB, QT)
                 A_average[i, j+1] = Roe_Jacobian(nxi, QL, QR)
             except:
                 print([i, j])
+            print(Convective_Operator(nxi, state[i+1, j]))
+            E[i+1, j] = np.array(Convective_Operator(nxi, state[i+1, j]))
+            F[i, j+1] = np.array(Convective_Operator(neta, state[i, j+1]))
             
-            E[i+1, j] = Convective_Operator(nxi, state[i+1, j])
-            F[i, j+1] = Convective_Operator(neta, state[i, j+1])
-            
+            if c<6:
+                c+=1
+            else:
+                break
         #     k = k + 2
         #     if k+1 == maximum:
         #         break
@@ -84,8 +91,8 @@ def iterator(state, totalh, max_iterations):
         
     i=0
     Qprev = state
-    while i<max_iterations:
-        Epos2 = np.matmul(E[:: ,:], A_average[:, 1:])
+    while i<0: #max_iterations:
+        Epos2 = 0 #np.matmul(E[:: ,:], A_average[:, 1:])
         Spos2 = 0
         Eneg2 = 0
         Sneg2 = 0
@@ -96,5 +103,5 @@ def iterator(state, totalh, max_iterations):
         
         Qnew = Qprev - delta_t*( (Epos2 * Spos2 - Eneg2 * Sneg2 ) + (Fpos2 * Spos2 - Fneg2 * Sneg2))
     
-    return var, inp
+    return var, E, F
 

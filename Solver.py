@@ -74,8 +74,8 @@ def Convective_Operator(curv, state, gamma=1.4):
     e3 = q2*q3*etax/q1 + (q3**2)*etay/q1 + (gamma-1)*(q4 - 0.5*((q2**2)/q1 + (q3**2)/q1))*etay
     e4 = gamma*q4 - 0.5*(gamma - 1)*((q2**2)/q1 + (q3**2)/q1)*(q2/q1*etax + q3/q1*etay)
     
-    E = np.array([[e1], [e2], [e3], [e4]])
-    print(E)
+    E = np.array([e1, e2, e3, e4])
+    
     return E
 
 def phi(mode):
