@@ -35,7 +35,7 @@ def Roe_Jacobian(curv, stateL, stateR, gamma = 1.4):
                    [u - c*etax, u, u + c*etax, etay],
                    [v - c*etay, v, v + c*etay, -etax],
                    [h - c*vn, 0.5*(u**2 + v**2), h + c*vn, u*etay - v*etax]])
-    print(Rv)
+    # print(Rv)
     eigval = [abs(vn - c), abs(vn), abs(vn + c), abs(vn)]
     Diag = np.zeros([len(eigval), len(eigval)])
     for i in range(len(eigval)):
@@ -44,13 +44,19 @@ def Roe_Jacobian(curv, stateL, stateR, gamma = 1.4):
     g = (gamma-1)
     ss = c**2
     ek = 0.5*(u**2 + v**2)
+    if etax == 0:
+        etax = 0.01
     Lv = np.array([[(g*ek + c*vn)/(2.*ss), (-g*u - c*etax)*0.5/(ss), (-g*v - c*etay)*0.5/(ss), 0.5*g/(ss)],
                    [(ss - g*ek)/ss, g*u/ss, g*v/ss, -g/ss],
                    [(g*ek - c*vn)/(2.*ss), (-g*u + c*etax)/(2.*ss), (-g*v + c*etay)/(2.*ss), (-g/(2.*ss))],
                    [(v - vn*etay)/etax, etay, -etax, 0.]])
+    # cof = np.array([[(g*ek + c*vn)/(2.*ss), (-g*u - c*etax)*0.5/(ss), (-g*v - c*etay)*0.5/(ss), 0.5*g/(ss)],
+    #                [(ss - g*ek)/ss, g*u/ss, g*v/ss, -g/ss],
+    #                [(g*ek - c*vn)/(2.*ss), (-g*u + c*etax)/(2.*ss), (-g*v + c*etay)/(2.*ss), (-g/(2.*ss))],
+    #                [(v - vn*etay)/etax, etay, -etax, 0.]])
     R = np.matmul(Diag, Rv)
     out = np.matmul(Lv, R)
-    print(out)
+    # print(out)
     return out
     
 def Convective_Operator(curv, state, gamma=1.4):
@@ -69,7 +75,7 @@ def Convective_Operator(curv, state, gamma=1.4):
     e4 = gamma*q4 - 0.5*(gamma - 1)*((q2**2)/q1 + (q3**2)/q1)*(q2/q1*etax + q3/q1*etay)
     
     E = np.array([[e1], [e2], [e3], [e4]])
-    
+    print(E)
     return E
 
 def phi(mode):
@@ -89,21 +95,21 @@ def state_interpolation(index, epsilon, kappa, direction, state):
     Q = state[i, j]
     if orient[direction] == 0:
         Qnegone = state[i - 2, j]
-        Qnegtwo = state[i - 4, j]
+        #Qnegtwo = state[i - 4, j]
         Qzero = state[i + 2, j]
-        Qposone = state[i + 4, j]
+        #Qposone = state[i + 4, j]
         
     if orient[direction] == 1:
         Qnegone = state[i, j - 2]
-        Qnegtwo = state[i, j - 4]
+        #Qnegtwo = state[i, j - 4]
         Qzero = state[i, j + 2]
-        Qposone = state[i, j + 4]
+        #Qposone = state[i, j + 4]
         
     limiterL, rL = phi("const")
-    QL = Qnegone + 0.25*epsilon*((1 - kappa)*(Qnegone - Qnegtwo) * limiterL + (1 + kappa)*(Q - Qnegone)/rL * limiterL)
+    QL = Qnegone #+ 0.25*epsilon*((1 - kappa)*(Qnegone - Qnegtwo) * limiterL + (1 + kappa)*(Q - Qnegone)/rL * limiterL)
     
     limiterR, rR = phi("const")
-    QR = Qzero - 0.25*epsilon*((1 + kappa)*(Qzero - Qnegone)*limiterR*1/rR + (1 - kappa)*(Qposone - Qzero)*limiterR)
+    QR = Qzero #- 0.25*epsilon*((1 + kappa)*(Qzero - Qnegone)*limiterR*1/rR + (1 - kappa)*(Qposone - Qzero)*limiterR)
     
     return QL, QR
     

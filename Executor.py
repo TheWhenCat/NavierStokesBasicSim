@@ -38,15 +38,22 @@ def iterator(state, totalh, max_iterations):
     
     #state = np.random.rand(size[0], size[1], 4)
     inp = state
-    A_average = np.zeros([size[0], size[1], 4])
-    E = np.zeros([size[0], size[1], 4])
-    F = np.zeros([size[0], size[1], 4])
-    for i in range(3,size[0] - 3, 2):
-        for j in range(3, size[1] - 3, 2):
-            
+    
+    A_average = np.zeros([size[0], size[1], 4, 4])
+    E = np.zeros([size[0], size[1], 4, 4])
+    F = np.zeros([size[0], size[1], 4, 4])
+    m= 3
+    xmax = size[0] - 3
+    for i in range(m,xmax, 2):
+        k = 3
+        maximum = size[1] - 3
+        for j in range(k, maximum, 2):
+            if all(inp[i, j] == 0):
+                print(inp[i, j])
+                
             QB,QT = state_interpolation([i, j], 0, 1, "eta", state)
-            logging.debug(f'{QB}')
-            logging.debug(f'{QT}')
+            # logging.debug(f'{QB}')
+            # logging.debug(f'{QT}')
             var[i-1, j, 0] = QB
             var[i+1, j, 1] = QT
                        
@@ -55,20 +62,39 @@ def iterator(state, totalh, max_iterations):
             var[i, j+1, 1] = QR
             
             #normalize    
-            neta = (totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2]) / np.sqrt(totalh[i-1, j-1, 0:2].dot(totalh[i-1, j+1, 0:2]))
-            nxi = (totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2]) / np.sqrt(totalh[i+1, j-1, 0:2].dot(totalh[i-1, j+1, 0:2]))
-            
-            A_average[i+1, j] = Roe_Jacobian(neta, QB, QT)
-            A_average[i, j+1] = Roe_Jacobian(nxi, QL, QR)
+            neta = (totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
+            neta = neta / np.sqrt(neta.dot(neta))
+            nxi = (totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
+            nxi = nxi / np.sqrt(nxi.dot(nxi))
+            try:
+                A_average[i+1, j] = Roe_Jacobian(neta, QB, QT)
+                A_average[i, j+1] = Roe_Jacobian(nxi, QL, QR)
+            except:
+                print([i, j])
             
             E[i+1, j] = Convective_Operator(nxi, state[i+1, j])
             F[i, j+1] = Convective_Operator(neta, state[i, j+1])
             
-            
+        #     k = k + 2
+        #     if k+1 == maximum:
+        #         break
+        # m = m + 2
+        # if m + 1 == xmax:
+        #     break
+        
     i=0
     Qprev = state
-    # while i<max_iterations:
-    #     Qnew = Qprev - delta_t*(2)
+    while i<max_iterations:
+        Epos2 = np.matmul(E[:: ,:], A_average[:, 1:])
+        Spos2 = 0
+        Eneg2 = 0
+        Sneg2 = 0
+        
+        Fpos2 = 0
+        Fneg2 = 0
+        
+        
+        Qnew = Qprev - delta_t*( (Epos2 * Spos2 - Eneg2 * Sneg2 ) + (Fpos2 * Spos2 - Fneg2 * Sneg2))
     
     return var, inp
 

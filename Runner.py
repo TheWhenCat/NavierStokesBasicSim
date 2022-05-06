@@ -17,4 +17,4 @@ totalh = read_in(file)
 state = initial_values(P, T, M, totalh)
 
 x, inp =iterator(state, totalh, 500)
-xvis = x[:, :, 1, :]
+xvis = x[:, :, 0, 3]
