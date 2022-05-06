@@ -4,6 +4,7 @@ Created on Tue May  3 20:17:30 2022
 
 @author: Dhruva
 """
+import time
 import logging, sys
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
@@ -41,25 +42,28 @@ def iterator(state, totalh, max_iterations):
     
     A_average = np.zeros([size[0], size[1], 4, 4])
     E = np.zeros([size[0], size[1], 4])
-    print(np.shape(E))
+    # print(np.shape(E))
     F = np.zeros([size[0], size[1], 4])
     m= 3
-    xmax = size[0] - 3
+    xmax = size[0] - 4
     for i in range(m,xmax, 2):
         k = 3
-        c=0
-        maximum = size[1] - 3
+        maximum = size[1] - 4
         for j in range(k, maximum, 2):
             if all(inp[i, j] == 0):
                 print(inp[i, j])
                 
-            QB,QT = state_interpolation([i, j], 0, 1, "eta", state)
-            # logging.debug(f'{QB}')
-            # logging.debug(f'{QT}')
+            QB,QT = state_interpolation([i, j], 1, -1, "eta", state)
+            # print("QB: ", QB)
+            # print("QT: ", QT)
+            # print("Difference: ", np.subtract(QB, QT))
             var[i-1, j, 0] = QB
             var[i+1, j, 1] = QT
                        
-            QL, QR = state_interpolation([i, j+1], 0, 1, "xi", state)
+            QL, QR = state_interpolation([i, j], 1, -1, "xi", state)
+            # print("QL: ", QL)
+            # print("QR: ", QR)
+            # print("Difference: ", np.subtract(QR, QL))
             var[i, j-1, 0] = QL
             var[i, j+1, 1] = QR
             
@@ -67,41 +71,50 @@ def iterator(state, totalh, max_iterations):
             neta = (totalh[i-1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
             neta = neta / np.sqrt(neta.dot(neta))
             nxi = (totalh[i+1, j-1, 0:2] - totalh[i-1, j+1, 0:2])
-            print(nxi)
-            nxi = nxi / np.sqrt(nxi.dot(nxi))
-            try:
-                A_average[i+1, j] = Roe_Jacobian(neta, QB, QT)
-                A_average[i, j+1] = Roe_Jacobian(nxi, QL, QR)
-            except:
-                print([i, j])
-            print(Convective_Operator(nxi, state[i+1, j]))
-            E[i+1, j] = np.array(Convective_Operator(nxi, state[i+1, j]))
-            F[i, j+1] = np.array(Convective_Operator(neta, state[i, j+1]))
             
-            if c<6:
-                c+=1
-            else:
-                break
-        #     k = k + 2
-        #     if k+1 == maximum:
-        #         break
-        # m = m + 2
-        # if m + 1 == xmax:
-        #     break
-        
-    i=0
-    Qprev = state
-    while i<0: #max_iterations:
-        Epos2 = 0 #np.matmul(E[:: ,:], A_average[:, 1:])
-        Spos2 = 0
-        Eneg2 = 0
-        Sneg2 = 0
-        
-        Fpos2 = 0
-        Fneg2 = 0
-        
-        
-        Qnew = Qprev - delta_t*( (Epos2 * Spos2 - Eneg2 * Sneg2 ) + (Fpos2 * Spos2 - Fneg2 * Sneg2))
+            nxi = nxi / np.sqrt(nxi.dot(nxi))
+            A_average[i, j+1] = Roe_Jacobian(neta, QB, QT)
+            A_average[i+1, j] = Roe_Jacobian(nxi, QL, QR)
+            #print("Average: ", A_average[i+1, j])
+            
+            one = 0.5*(np.array(Convective_Operator(nxi, QL)) + np.array(Convective_Operator(nxi, QR)))
+            two = -0.5*A_average[i+1, j].dot(np.subtract(QL, QR))
+            # print("One: ", one)
+            # print("Two: ", two)
+            E[i+1, j] =   (one*state[i+1, j, 2] + two) * totalh[i+1, j, 2]
+            # print("E: ", E[i+1, j])
+            
+            one = 0.5*(np.array(Convective_Operator(neta, QB)) + np.array(Convective_Operator(neta, QT)))
+            two = -0.5*A_average[i, j+1].dot(np.subtract(QB, QT))
+            F[i, j+1] = (one*state[i, j+1, 2] + two) * totalh[i, j+1, 2]
+            # print("F: ", F[i, j+1])
+            
+        return var, E, F, delta_t
     
-    return var, E, F
+def total_flux(totalh, E, F, delta_t, Qprev, maxi=5):
+    Etot = np.zeros(np.shape(Qprev)) 
+    Ftot = np.zeros(np.shape(Qprev))
+    i = 0
+    t0 = time.time()
+    while i<maxi: #max_iterations:
+        # print("Everything is not ok :(")
+        Etot[3::2, 0::2] = E[3::2, 0::2]- E[1:-3:2, 0::2]
+        
+        Ftot[3::2, 0::2] = F[3::2, 0::2] - F[1:-3:2, 0::2]
+        
+        Qnew = Qprev - delta_t*( Etot + Ftot)
+        #res = np.sqrt(Qnew - Qprev).dot(Qnew - Qprev))
+        # print("JK we made it")
+        i += 1
+        
+        Qres = Qnew - Qprev
+        sum = np.zeros(np.shape(Qres))
+        for i in range(len(Qres)):
+            for j in range(len(Qres[i])):
+                sum += np.square(Qres[i, j])
+        res = np.sqrt(sum)
+    print("Time: ", time.time() - t0)
+    # print("Residual: ", res)
+    return Qnew #, res
+    
 

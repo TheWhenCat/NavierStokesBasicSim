@@ -27,7 +27,7 @@ def Roe_Jacobian(curv, stateL, stateR, gamma = 1.4):
     u = (np.sqrt(rhoR) * uR + np.sqrt(rhoL) * uL) /(np.sqrt(rhoR) + np.sqrt(rhoL))
     v = (np.sqrt(rhoR) * vR + np.sqrt(rhoL) * vL) /(np.sqrt(rhoR) + np.sqrt(rhoL))
     h = (np.sqrt(rhoR) * hR + np.sqrt(rhoL) * hL) /(np.sqrt(rhoR) + np.sqrt(rhoL))
-    c = np.sqrt(-(gamma - 1.)*(h - 0.5*(u**2 + v**2)))
+    c = np.sqrt(abs((gamma - 1.)*(h - 0.5*(u**2 + v**2))))
     
     vn = u*etax + v*etay
     
@@ -35,7 +35,7 @@ def Roe_Jacobian(curv, stateL, stateR, gamma = 1.4):
                    [u - c*etax, u, u + c*etax, etay],
                    [v - c*etay, v, v + c*etay, -etax],
                    [h - c*vn, 0.5*(u**2 + v**2), h + c*vn, u*etay - v*etax]])
-    # print(Rv)
+    #print("Rv: ", Rv)
     eigval = [abs(vn - c), abs(vn), abs(vn + c), abs(vn)]
     Diag = np.zeros([len(eigval), len(eigval)])
     for i in range(len(eigval)):
@@ -50,10 +50,7 @@ def Roe_Jacobian(curv, stateL, stateR, gamma = 1.4):
                    [(ss - g*ek)/ss, g*u/ss, g*v/ss, -g/ss],
                    [(g*ek - c*vn)/(2.*ss), (-g*u + c*etax)/(2.*ss), (-g*v + c*etay)/(2.*ss), (-g/(2.*ss))],
                    [(v - vn*etay)/etax, etay, -etax, 0.]])
-    # cof = np.array([[(g*ek + c*vn)/(2.*ss), (-g*u - c*etax)*0.5/(ss), (-g*v - c*etay)*0.5/(ss), 0.5*g/(ss)],
-    #                [(ss - g*ek)/ss, g*u/ss, g*v/ss, -g/ss],
-    #                [(g*ek - c*vn)/(2.*ss), (-g*u + c*etax)/(2.*ss), (-g*v + c*etay)/(2.*ss), (-g/(2.*ss))],
-    #                [(v - vn*etay)/etax, etay, -etax, 0.]])
+
     R = np.matmul(Diag, Rv)
     out = np.matmul(Lv, R)
     # print(out)
@@ -95,21 +92,21 @@ def state_interpolation(index, epsilon, kappa, direction, state):
     Q = state[i, j]
     if orient[direction] == 0:
         Qnegone = state[i - 2, j]
-        #Qnegtwo = state[i - 4, j]
+        Qnegtwo = state[i - 4, j]
         Qzero = state[i + 2, j]
-        #Qposone = state[i + 4, j]
+        Qposone = state[i + 4, j]
         
     if orient[direction] == 1:
         Qnegone = state[i, j - 2]
-        #Qnegtwo = state[i, j - 4]
+        Qnegtwo = state[i, j - 4]
         Qzero = state[i, j + 2]
-        #Qposone = state[i, j + 4]
+        Qposone = state[i, j + 4]
         
     limiterL, rL = phi("const")
-    QL = Qnegone #+ 0.25*epsilon*((1 - kappa)*(Qnegone - Qnegtwo) * limiterL + (1 + kappa)*(Q - Qnegone)/rL * limiterL)
+    QL = Qnegone + 0.25*epsilon*((1 - kappa)*(Qnegone - Qnegtwo) * limiterL + (1 + kappa)*(Q - Qnegone)/rL * limiterL)
     
     limiterR, rR = phi("const")
-    QR = Qzero #- 0.25*epsilon*((1 + kappa)*(Qzero - Qnegone)*limiterR*1/rR + (1 - kappa)*(Qposone - Qzero)*limiterR)
+    QR = Qzero - 0.25*epsilon*((1 + kappa)*(Qzero - Qnegone)*limiterR*1/rR + (1 - kappa)*(Qposone - Qzero)*limiterR)
     
     return QL, QR
     
